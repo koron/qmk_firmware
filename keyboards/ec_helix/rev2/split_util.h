@@ -10,5 +10,5 @@ extern volatile bool isLeftHand;
 void matrix_slave_scan(void);
 
 void split_keyboard_setup(void);
-
+bool is_helix_master(void);
 #endif

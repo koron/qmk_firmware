@@ -56,6 +56,7 @@ along with this program.  If not, see <http://www.gnu.org/licenses/>.
 
 // keyboard RGB LED support
 #define RGBLED_NUM 32
+#define RGBLIGHT_ANIMATIONS
 
 #define OLED_FONT_H "common/glcdfont.c"
 #ifndef IOS_DEVICE_ENABLE

@@ -358,7 +358,7 @@ int serial_transaction(int master_changed) {
 
 uint8_t matrix_scan(void)
 {
-  if (is_keyboard_master()) {
+  if (is_helix_master()) {
     matrix_master_scan();
   }else{
     matrix_slave_scan();

@@ -42,10 +42,10 @@ bool is_keyboard_left(void) {
     setPinInput(SPLIT_HAND_PIN);
     return readPin(SPLIT_HAND_PIN);
 #elif defined(MASTER_RIGHT)
-    return !is_keyboard_master();
+    return !is_helix_master();
 #endif
 
-    return is_keyboard_master();
+    return is_helix_master();
 }
 
 static void keyboard_master_setup(void) {
@@ -59,10 +59,30 @@ static void keyboard_slave_setup(void) {
 void split_keyboard_setup(void) {
    isLeftHand = is_keyboard_left();
 
-   if (is_keyboard_master()) {
+   if (is_helix_master()) {
       keyboard_master_setup();
    } else {
       keyboard_slave_setup();
    }
    sei();
+}
+
+bool is_helix_master(void) {
+    static enum { UNKNOWN, MASTER, SLAVE } usbstate = UNKNOWN;
+
+    // only check once, as this is called often
+    if (usbstate == UNKNOWN) {
+#if defined(SPLIT_USB_DETECT)
+        usbstate = waitForUsb() ? MASTER : SLAVE;
+#elif defined(__AVR__)
+        USBCON |= (1 << OTGPADE);  // enables VBUS pad
+        wait_us(5);
+
+        usbstate = (USBSTA & (1 << VBUS)) ? MASTER : SLAVE;  // checks state of VBUS
+#else
+        usbstate = MASTER;
+#endif
+    }
+
+    return (usbstate == MASTER);
 }
