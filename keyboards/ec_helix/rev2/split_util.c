@@ -37,13 +37,13 @@ bool waitForUsb(void) {
 
 
 bool is_keyboard_left(void) {
-#if defined(SPLIT_HAND_PIN)
+    #if defined(SPLIT_HAND_PIN)
     // Test pin SPLIT_HAND_PIN for High/Low, if low it's right hand
     setPinInput(SPLIT_HAND_PIN);
     return readPin(SPLIT_HAND_PIN);
-#elif defined(MASTER_RIGHT)
+    #elif defined(MASTER_RIGHT)
     return !is_helix_master();
-#endif
+    #endif
 
     return is_helix_master();
 }
@@ -57,14 +57,14 @@ static void keyboard_slave_setup(void) {
 }
 
 void split_keyboard_setup(void) {
-   isLeftHand = is_keyboard_left();
+    isLeftHand = is_keyboard_left();
 
-   if (is_helix_master()) {
-      keyboard_master_setup();
-   } else {
-      keyboard_slave_setup();
-   }
-   sei();
+    if (is_helix_master()) {
+        keyboard_master_setup();
+    } else {
+        keyboard_slave_setup();
+    }
+    sei();
 }
 
 bool is_helix_master(void) {
@@ -72,16 +72,16 @@ bool is_helix_master(void) {
 
     // only check once, as this is called often
     if (usbstate == UNKNOWN) {
-#if defined(SPLIT_USB_DETECT)
+        #if defined(SPLIT_USB_DETECT)
         usbstate = waitForUsb() ? MASTER : SLAVE;
-#elif defined(__AVR__)
+        #elif defined(__AVR__)
         USBCON |= (1 << OTGPADE);  // enables VBUS pad
         wait_us(5);
 
         usbstate = (USBSTA & (1 << VBUS)) ? MASTER : SLAVE;  // checks state of VBUS
-#else
+        #else
         usbstate = MASTER;
-#endif
+        #endif
     }
 
     return (usbstate == MASTER);
