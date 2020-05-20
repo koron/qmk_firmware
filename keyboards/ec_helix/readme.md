@@ -1,10 +1,11 @@
 # ec_helix
 
-![ec_helix](imgur.com image replace me!)
+![ec_helix](https://pbs.twimg.com/media/EYd7XvGU0AI8xkQ?format=jpg)
+![ec_helix](https://pbs.twimg.com/media/EYd7aIuU0AEgZjp?format=jpg)
 
 A short description of the keyboard/project
 
-* Keyboard Maintainer: [ginjake](https://github.com/yourusername)
+* Keyboard Maintainer: [ginjake](https://github.com/ginjake)
 * Hardware Supported: The PCBs, controllers supported
 * Hardware Availability: Links to where you can find this hardware
 
