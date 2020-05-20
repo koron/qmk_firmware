@@ -31,7 +31,7 @@ along with this program.  If not, see <http://www.gnu.org/licenses/>.
 #ifndef CHARGE_PIN
 #define CHARGE_PIN B2
 #endif
-#ifdef ADC_PIN
+#ifndef ADC_PIN
 #define ADC_PIN B6
 #endif
 
