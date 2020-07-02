@@ -45,7 +45,7 @@ along with this program.  If not, see <http://www.gnu.org/licenses/>.
 #define CALIBRATE_BUF 5
 #define CALIBRATE_INI 20
 #define CALIBRATE_FREQ_MS 10000
-#define DEFAULT_THRESHOLD_DOWN 20
+#define DEFAULT_THRESHOLD_DOWN 30
 #define DEFAULT_THRESHOLD_UP 10
 #define DEFAULT_FILTER_Q (1.0/sqrt(2.0))
 #define DEFAULT_SAMPLE_HZ 150.0
