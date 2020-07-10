@@ -260,6 +260,7 @@ static uint8_t read_all(matrix_row_t current_matrix[], uint8_t offset) {
                 current_matrix[r + offset] |= (MATRIX_ROW_SHIFTER << c);
                 changed = 1;
                 #ifdef CONSOLE_ENABLE
+                //uprintf("col=%d row=%d \n", c, r);
                 uprintf("key%d = down %d %d\n", k, VAL2THRESHOLD(result), calibrate[k].threshold);
                 #endif
             }

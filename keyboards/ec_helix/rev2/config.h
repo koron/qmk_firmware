@@ -24,7 +24,7 @@ along with this program.  If not, see <http://www.gnu.org/licenses/>.
 #define DEVICE_VER 0x0001
 #define MANUFACTURER kano_v
 #define PRODUCT ec_helix
-#define DESCRIPTION helix only for varmilo EC switch
+#define DESCRIPTION helix only for varmilo EC switch or NiZ switch
 
 
 /* Use Serial */
