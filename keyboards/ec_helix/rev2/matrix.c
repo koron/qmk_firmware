@@ -45,8 +45,8 @@ along with this program.  If not, see <http://www.gnu.org/licenses/>.
 #define CALIBRATE_BUF 5
 #define CALIBRATE_INI 20
 #define CALIBRATE_FREQ_MS 10000
-#define DEFAULT_THRESHOLD_DOWN 30
-#define DEFAULT_THRESHOLD_UP 10
+#define DEFAULT_THRESHOLD_DOWN 50
+#define DEFAULT_THRESHOLD_UP 25
 #define DEFAULT_FILTER_Q (1.0/sqrt(2.0))
 #define DEFAULT_SAMPLE_HZ 150.0
 #define DEFAULT_LOWPASS_HZ 1.0
@@ -166,7 +166,7 @@ uint16_t get_one_key_val(uint16_t k){
     _barrier();
 
     // SPIN WAIT
-    spin_wait(1);
+    //spin_wait(1);
 
     // ADC Start
     ADCSRA |= (_BV(ADIF)|_BV(ADSC));
@@ -260,7 +260,7 @@ static uint8_t read_all(matrix_row_t current_matrix[], uint8_t offset) {
                 current_matrix[r + offset] |= (MATRIX_ROW_SHIFTER << c);
                 changed = 1;
                 #ifdef CONSOLE_ENABLE
-                //uprintf("col=%d row=%d \n", c, r);
+                uprintf("col=%d row=%d \n", c, r);
                 uprintf("key%d = down %d %d\n", k, VAL2THRESHOLD(result), calibrate[k].threshold);
                 #endif
             }

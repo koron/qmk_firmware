@@ -1,7 +1,7 @@
 
 # Spacific Build Options default values
-OLED_DRIVER_ENABLE  = yes   # OLED_ENABLE
-LED_BACK_ENABLE = no       # LED backlight (Enable WS2812 RGB underlight.)
+OLED_DRIVER_ENABLE  = no   # OLED_ENABLE
+LED_BACK_ENABLE = yes       # LED backlight (Enable WS2812 RGB underlight.)
 IOS_DEVICE_ENABLE = no      # connect to IOS device (iPad,iPhone)
 
 KEYBOARD_PATHS += $(KEYBD_TOP_DIR)/local_drivers
