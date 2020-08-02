@@ -15,16 +15,28 @@ You should have received a copy of the GNU General Public License
 along with this program.  If not, see <http://www.gnu.org/licenses/>.
 */
 
+/*
+ * scan matrix
+ */
 #include <stdint.h>
+#include <stdbool.h>
 #include <string.h>
+#include <avr/io.h>
 #include <avr/wdt.h>
 #include <avr/interrupt.h>
+#include <util/delay.h>
+#include "print.h"
+#include "debug.h"
 #include "util.h"
 #include "matrix.h"
 #include "split_util.h"
 #include "quantum.h"
 
-#include "split_scomm.h"
+#ifdef USE_MATRIX_I2C
+#  include "i2c.h"
+#else // USE_SERIAL
+#  include "split_scomm.h"
+#endif
 
 #define ERROR_DISCONNECT_COUNT 5
 
@@ -55,11 +67,13 @@ along with this program.  If not, see <http://www.gnu.org/licenses/>.
 static const uint8_t row_pins[] = MATRIX_ROW_PINS;
 static const uint8_t col_pins[] = MATRIX_COL_PINS;
 static uint8_t error_count = 0;
+uint8_t is_master = 0 ;
 
 /* matrix state(1:on, 0:off) */
 static matrix_row_t matrix[MATRIX_ROWS];
 
 static uint8_t matrix_master_scan(void);
+
 
 __attribute__ ((weak))
 void matrix_init_kb(void) {
@@ -77,6 +91,18 @@ void matrix_init_user(void) {
 
 __attribute__ ((weak))
 void matrix_scan_user(void) {
+}
+
+inline
+uint8_t matrix_rows(void)
+{
+    return MATRIX_ROWS;
+}
+
+inline
+uint8_t matrix_cols(void)
+{
+    return MATRIX_COLS;
 }
 
 typedef struct{
@@ -239,7 +265,6 @@ static void init_pins(void) {
     #else
     ERROR
     #endif
-
 }
 
 static uint8_t read_all(matrix_row_t current_matrix[], uint8_t offset) {
@@ -317,7 +342,7 @@ void matrix_init(void)
     init_pins();
 
     // initialize matrix state: all keys off
-    for (uint8_t i = 0; i < MATRIX_ROWS; i++) {
+    for (uint8_t i=0; i < MATRIX_ROWS; i++) {
         matrix[i] = 0;
     }
     init_calibrate_info();
@@ -329,6 +354,8 @@ void matrix_init(void)
         finter_config(&filter[k], DEFAULT_LOWPASS_HZ, DEFAULT_FILTER_Q, DEFAULT_SAMPLE_HZ);
     }
 
+    is_master = is_helix_master();
+
     matrix_init_quantum();
 }
 
@@ -336,54 +363,105 @@ uint8_t _matrix_scan(void)
 {
     // Right hand is stored after the left in the matirx so, we need to offset it
     int offset = isLeftHand ? 0 : (ROWS_PER_HAND);
-
-    return read_all(matrix, offset);
+    read_all(matrix, offset);
+    return 1;
 }
+
+#ifdef USE_MATRIX_I2C
+
+// Get rows from other half over i2c
+int i2c_transaction(void) {
+    int slaveOffset = (isLeftHand) ? (ROWS_PER_HAND) : 0;
+
+    int err = i2c_master_start(SLAVE_I2C_ADDRESS + I2C_WRITE);
+    if (err) goto i2c_error;
+
+    // start of matrix stored at 0x00
+    err = i2c_master_write(0x00);
+    if (err) goto i2c_error;
+
+    // Start read
+    err = i2c_master_start(SLAVE_I2C_ADDRESS + I2C_READ);
+    if (err) goto i2c_error;
+
+    if (!err) {
+        int i;
+        for (i = 0; i < ROWS_PER_HAND-1; ++i) {
+            matrix[slaveOffset+i] = i2c_master_read(I2C_ACK);
+        }
+        matrix[slaveOffset+i] = i2c_master_read(I2C_NACK);
+        i2c_master_stop();
+    } else {
+i2c_error: // the cable is disconnceted, or something else went wrong
+        i2c_reset_state();
+        return err;
+    }
+
+    return 0;
+}
+
+#else // USE_SERIAL
 
 int serial_transaction(int master_changed) {
     int slaveOffset = (isLeftHand) ? (ROWS_PER_HAND) : 0;
-    #ifdef SERIAL_USE_MULTI_TRANSACTION
+#ifdef SERIAL_USE_MULTI_TRANSACTION
     int ret=serial_update_buffers(master_changed);
-    #else
+#else
     int ret=serial_update_buffers();
-    #endif
+#endif
     if (ret ) {
         if(ret==2) writePinLow(B0);
         return 1;
     }
     writePinHigh(B0);
-    memcpy(&matrix[slaveOffset], (void *)serial_slave_buffer, sizeof(serial_slave_buffer));
+    memcpy(&matrix[slaveOffset],
+        (void *)serial_slave_buffer, sizeof(serial_slave_buffer));
     return 0;
 }
+#endif
 
 uint8_t matrix_scan(void)
 {
-    if (is_helix_master()) {
+    if (is_master) {
         matrix_master_scan();
     }else{
         matrix_slave_scan();
+#ifndef USE_MATRIX_I2C
         int offset = (isLeftHand) ? ROWS_PER_HAND : 0;
-        memcpy(&matrix[offset], (void *)serial_master_buffer, sizeof(serial_master_buffer));
+        memcpy(&matrix[offset],
+               (void *)serial_master_buffer, sizeof(serial_master_buffer));
+#endif
         matrix_scan_quantum();
     }
     return 1;
 }
 
+
 uint8_t matrix_master_scan(void) {
 
     int ret = _matrix_scan();
-    int mchanged = 1;
 
-    int offset = (isLeftHand) ? 0 : ROWS_PER_HAND;
-
-    #ifdef SERIAL_USE_MULTI_TRANSACTION
+#ifdef USE_MATRIX_I2C
+//    for (int i = 0; i < ROWS_PER_HAND; ++i) {
+        /* i2c_slave_buffer[i] = matrix[offset+i]; */
+//        i2c_slave_buffer[i] = matrix[offset+i];
+//    }
+#else // USE_SERIAL
+  int mchanged = 1;
+  int offset = (isLeftHand) ? 0 : ROWS_PER_HAND;
+  #ifdef SERIAL_USE_MULTI_TRANSACTION
     mchanged = memcmp((void *)serial_master_buffer,
-    &matrix[offset], sizeof(serial_master_buffer));
-    #endif
+		      &matrix[offset], sizeof(serial_master_buffer));
+  #endif
     memcpy((void *)serial_master_buffer,
-    &matrix[offset], sizeof(serial_master_buffer));
+	   &matrix[offset], sizeof(serial_master_buffer));
+#endif
 
+#ifdef USE_MATRIX_I2C
+    if( i2c_transaction() ) {
+#else // USE_SERIAL
     if( serial_transaction(mchanged) ) {
+#endif
         error_count++;
 
         if (error_count > ERROR_DISCONNECT_COUNT) {
@@ -406,19 +484,37 @@ void matrix_slave_scan(void) {
 
     int offset = (isLeftHand) ? 0 : ROWS_PER_HAND;
 
-    #ifdef SERIAL_USE_MULTI_TRANSACTION
-    int change = 0;
-    #endif
+#ifdef USE_MATRIX_I2C
     for (int i = 0; i < ROWS_PER_HAND; ++i) {
-        #ifdef SERIAL_USE_MULTI_TRANSACTION
+        /* i2c_slave_buffer[i] = matrix[offset+i]; */
+        i2c_slave_buffer[i] = matrix[offset+i];
+    }
+#else // USE_SERIAL
+  #ifdef SERIAL_USE_MULTI_TRANSACTION
+    int change = 0;
+  #endif
+    for (int i = 0; i < ROWS_PER_HAND; ++i) {
+  #ifdef SERIAL_USE_MULTI_TRANSACTION
         if( serial_slave_buffer[i] != matrix[offset+i] )
-        change = 1;
-        #endif
+	    change = 1;
+  #endif
         serial_slave_buffer[i] = matrix[offset+i];
     }
-    #ifdef SERIAL_USE_MULTI_TRANSACTION
+  #ifdef SERIAL_USE_MULTI_TRANSACTION
     slave_buffer_change_count += change;
-    #endif
+  #endif
+#endif
+}
+
+bool matrix_is_modified(void)
+{
+    return true;
+}
+
+inline
+bool matrix_is_on(uint8_t row, uint8_t col)
+{
+    return (matrix[row] & ((matrix_row_t)1<<col));
 }
 
 inline
@@ -435,4 +531,13 @@ void matrix_print(void)
         pbin_reverse16(matrix_get_row(row));
         print("\n");
     }
+}
+
+uint8_t matrix_key_count(void)
+{
+    uint8_t count = 0;
+    for (uint8_t i = 0; i < MATRIX_ROWS; i++) {
+        count += bitpop16(matrix[i]);
+    }
+    return count;
 }

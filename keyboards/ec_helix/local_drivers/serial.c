@@ -575,7 +575,7 @@ int soft_serial_get_and_clean_status(int sstd_index) {
 
 #endif
 
-// serial.c history
+// Helix serial.c history
 //   2018-1-29 fork from let's split and add PD2, modify sync_recv() (#2308, bceffdefc)
 //   2018-6-28 bug fix master to slave comm and speed up (#3255, 1038bbef4)
 //             (adjusted with avr-gcc 4.9.2)

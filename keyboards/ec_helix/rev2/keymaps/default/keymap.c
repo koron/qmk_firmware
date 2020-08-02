@@ -174,12 +174,13 @@ void matrix_scan_user(void) {
     // 100msに一回
     if (TIMER_DIFF_32(timer_now, last_timer) > 100) {
         last_timer = timer_now;
-        oled_task_user();
-
+        #ifdef OLED_DRIVER_ENABLE
+            oled_task_user();
+        #endif
 
         #ifdef CONSOLE_ENABLE
         uint8_t col,row,val,threshold;
-        // デバッグ用
+        // for Debug
         col = 1;
         row = 2;
         get_matrix_key_val(col, row, &val, &threshold);
@@ -187,6 +188,7 @@ void matrix_scan_user(void) {
         #endif
     }
 }
+#ifdef OLED_DRIVER_ENABLE
 static void render_logo(void) {
 
     static const char helix_logo[] PROGMEM ={
@@ -194,60 +196,57 @@ static void render_logo(void) {
         0xa0,0xa1,0xa2,0xa3,0xa4,0xa5,0xa6,0xa7,0xa8,0xa9,0xaa,0xab,0xac,0xad,0xae,0xaf,0xb0,0xb1,0xb2,0xb3,0xb4,
         0xc0,0xc1,0xc2,0xc3,0xc4,0xc5,0xc6,0xc7,0xc8,0xc9,0xca,0xcb,0xcc,0xcd,0xce,0xcf,0xd0,0xd1,0xd2,0xd3,0xd4,
         0};
+    oled_write_P(helix_logo, false);
+}
 
-        oled_write_P(helix_logo, false);
+oled_rotation_t oled_init_user(oled_rotation_t rotation) {
+    if (!is_helix_master()) {
+      return OLED_ROTATION_180;  // flips the display 180 degrees if offhand
     }
+    return rotation;
+}
 
-    #ifdef OLED_DRIVER_ENABLE
-    oled_rotation_t oled_init_user(oled_rotation_t rotation) {
-        if (!is_helix_master()) {
-            return OLED_ROTATION_180;  // flips the display 180 degrees if offhand
-        }
-
-        return rotation;
+static void render_layer_status(void) {
+    // Define layers here, Have not worked out how to have text displayed for each layer. Copy down the number you see and add a case for it below
+    oled_write_P(PSTR("Layer: "), false);
+    switch (get_highest_layer(layer_state)) {
+        case _QWERTY:
+        oled_write_P(PSTR("Default"), false);
+        break;
+        case _RAISE:
+        oled_write_P(PSTR("Raise"), false);
+        break;
+        case _LOWER:
+        oled_write_P(PSTR("Lower"), false);
+        break;
+        case _ADJUST:
+        oled_write_P(PSTR("Adjust"), false);
+        break;
+        default:
+        oled_write_P(PSTR("Undef-"), false);
     }
+}
 
-    static void render_layer_status(void) {
-        // Define layers here, Have not worked out how to have text displayed for each layer. Copy down the number you see and add a case for it below
-        oled_write_P(PSTR("Layer: "), false);
-        switch (get_highest_layer(layer_state)) {
-            case _QWERTY:
-            oled_write_P(PSTR("Default"), false);
-            break;
-            case _RAISE:
-            oled_write_P(PSTR("Raise"), false);
-            break;
-            case _LOWER:
-            oled_write_P(PSTR("Lower"), false);
-            break;
-            case _ADJUST:
-            oled_write_P(PSTR("Adjust"), false);
-            break;
-            default:
-            oled_write_P(PSTR("Undef-"), false);
-        }
+static void render_status(void) {
+    render_layer_status();
+    oled_write_P(PSTR("\n"), false);
+
+    // Host Keyboard LED Status
+    led_t led_state = host_keyboard_led_state();
+    oled_write_P(led_state.num_lock ? PSTR("NUM ") : PSTR("    "), false);
+    oled_write_P(PSTR("\n"), false);
+    oled_write_P(led_state.caps_lock ? PSTR("CAP ") : PSTR("    "), false);
+    oled_write_P(PSTR("\n"), false);
+    oled_write_P(led_state.scroll_lock ? PSTR("SCR ") : PSTR("    "), false);
+    oled_write_P(PSTR("\n"), false);
+}
+
+void oled_task_user(void) {
+    if (is_helix_master()) {
+        render_status();
+    } else {
+        render_logo();
+        oled_scroll_left();  // Turns on scrolling
     }
-
-    static void render_status(void) {
-        render_layer_status();
-        oled_write_P(PSTR("\n"), false);
-
-        // Host Keyboard LED Status
-        led_t led_state = host_keyboard_led_state();
-        oled_write_P(led_state.num_lock ? PSTR("NUM ") : PSTR("    "), false);
-        oled_write_P(PSTR("\n"), false);
-        oled_write_P(led_state.caps_lock ? PSTR("CAP ") : PSTR("    "), false);
-        oled_write_P(PSTR("\n"), false);
-        oled_write_P(led_state.scroll_lock ? PSTR("SCR ") : PSTR("    "), false);
-        oled_write_P(PSTR("\n"), false);
-    }
-
-    void oled_task_user(void) {
-        if (is_helix_master()) {
-            render_status();
-        } else {
-            render_logo();
-            oled_scroll_left();  // Turns on scrolling
-        }
-    }
-    #endif
+}
+#endif

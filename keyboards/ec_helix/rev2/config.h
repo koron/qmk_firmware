@@ -22,21 +22,33 @@ along with this program.  If not, see <http://www.gnu.org/licenses/>.
 #define VENDOR_ID 0xFEED
 #define PRODUCT_ID 0x0000
 #define DEVICE_VER 0x0001
-#define MANUFACTURER kano_v
+#define MANUFACTURER ginjake
 #define PRODUCT ec_helix
 #define DESCRIPTION helix only for varmilo EC switch or NiZ switch
 
+#define TAPPING_FORCE_HOLD
+#define TAPPING_TERM 100
 
-/* Use Serial */
+/* Use I2C or Serial */
 #define USE_SERIAL
+
+#ifndef USE_SERIAL
+#define USE_MATRIX_I2C
+#endif
 
 /* Soft Serial defines */
 #define SOFT_SERIAL_PIN D2
 #define SERIAL_USE_MULTI_TRANSACTION
 
+#if !defined(SERIAL_USE_MULTI_TRANSACTION) || defined(USE_MATRIX_I2C)
+#define SERIAL_SLAVE_BUFFER_LENGTH  ((MATRIX_ROWS)/2)
+#define SERIAL_MASTER_BUFFER_LENGTH ((MATRIX_ROWS)/2)
+#endif
+
 /* Select hand configuration */
 #define MASTER_LEFT
-//#define MASTER_RIGHT
+// #define MASTER_RIGHT
+// #define EE_HANDS
 
 /* key matrix size */
 // Rows are doubled-up
@@ -70,7 +82,7 @@ along with this program.  If not, see <http://www.gnu.org/licenses/>.
 #define RGBLIGHT_SAT_STEP 17
 
 #if defined(RGBLIGHT_ENABLE) && !defined(IOS_DEVICE_ENABLE)
-// USB_MAX_POWER_CONSUMPTION value
+// USB_MAX_POWER_CONSUMPTION value for Helix keyboard
 //  120  RGBoff, OLEDoff
 //  120  OLED
 //  330  RGB 6
