@@ -47,7 +47,7 @@ along with this program.  If not, see <http://www.gnu.org/licenses/>.
 
 /* Select hand configuration */
 #define MASTER_LEFT
-// #define MASTER_RIGHT
+//#define MASTER_RIGHT
 // #define EE_HANDS
 
 /* key matrix size */
@@ -72,7 +72,7 @@ along with this program.  If not, see <http://www.gnu.org/licenses/>.
 
 #define OLED_FONT_H "common/glcdfont.c"
 #ifndef IOS_DEVICE_ENABLE
-  #define RGBLIGHT_LIMIT_VAL 120
+  #define RGBLIGHT_LIMIT_VAL 200
   #define RGBLIGHT_VAL_STEP 17
 #else
   #define RGBLIGHT_LIMIT_VAL 35

@@ -38,6 +38,10 @@ along with this program.  If not, see <http://www.gnu.org/licenses/>.
 #  include "split_scomm.h"
 #endif
 
+#ifndef DEBOUNCE
+#  define DEBOUNCE 5
+#endif
+
 #define ERROR_DISCONNECT_COUNT 5
 
 #ifndef CHARGE_PIN
@@ -57,7 +61,7 @@ along with this program.  If not, see <http://www.gnu.org/licenses/>.
 #define CALIBRATE_BUF 5
 #define CALIBRATE_INI 20
 #define CALIBRATE_FREQ_MS 10000
-#define DEFAULT_THRESHOLD_DOWN 50
+#define DEFAULT_THRESHOLD_DOWN 90
 #define DEFAULT_THRESHOLD_UP 25
 #define DEFAULT_FILTER_Q (1.0/sqrt(2.0))
 #define DEFAULT_SAMPLE_HZ 150.0
@@ -71,6 +75,8 @@ uint8_t is_master = 0 ;
 
 /* matrix state(1:on, 0:off) */
 static matrix_row_t matrix[MATRIX_ROWS];
+static uint8_t debounce[KEY_NUM];
+uint32_t timer_1ms;
 
 static uint8_t matrix_master_scan(void);
 
@@ -269,15 +275,22 @@ static void init_pins(void) {
 
 static uint8_t read_all(matrix_row_t current_matrix[], uint8_t offset) {
     uint8_t changed = 0;
+	uint8_t changed_all = 0;
     uint16_t result;
     uint16_t buf;
     uint8_t c,r;
 
     // For each key...
     for (uint8_t k = 0; k < KEY_NUM; k++) {
+
+		if(debounce[k]>0){
+			continue;
+		}
+
         KEY2CR(k,c,r);
         result = get_one_key_val(k);
         key_val[k] = VAL2THRESHOLD(result);
+		changed = 0;
 
         // KEY DOWN?
         if(!(current_matrix[r + offset] & (MATRIX_ROW_SHIFTER << c))){
@@ -303,10 +316,17 @@ static uint8_t read_all(matrix_row_t current_matrix[], uint8_t offset) {
                 #endif
             }
         }
+
+		if(changed){
+			debounce[k] = DEBOUNCE;
+			changed_all = 1;
+		}
     }
 
     // Re Calibration
     uint32_t timer_now = timer_read32();
+
+	// Calibration Timer
     if (TIMER_DIFF_32(timer_now, last_timer) > CALIBRATE_FREQ_MS) {
         // Timer Update
         last_timer = timer_now;
@@ -324,7 +344,17 @@ static uint8_t read_all(matrix_row_t current_matrix[], uint8_t offset) {
         }
     }
 
-    return changed;
+	// 1ms Timer
+	if (TIMER_DIFF_32(timer_now, timer_1ms) > 1) {
+		timer_1ms = timer_now;
+		for(uint16_t k=0;k<KEY_NUM;k++){
+			if(debounce[k]>0){
+				debounce[k]--;
+			}
+		}
+	}
+
+    return changed_all;
 }
 
 void get_matrix_key_val(uint8_t col, uint8_t row, uint8_t* val, uint8_t *threshold){
@@ -347,11 +377,13 @@ void matrix_init(void)
     }
     init_calibrate_info();
     last_timer = timer_read32();
+	timer_1ms = last_timer;
 
     // Filter config
     for(uint8_t k=0;k<KEY_NUM;k++){
         // Low Pass Filter Init
         finter_config(&filter[k], DEFAULT_LOWPASS_HZ, DEFAULT_FILTER_Q, DEFAULT_SAMPLE_HZ);
+		debounce[k]=0;
     }
 
     is_master = is_helix_master();
