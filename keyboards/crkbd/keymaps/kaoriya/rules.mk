@@ -5,7 +5,11 @@ OLED_DRIVER_ENABLE = yes
 MOUSEKEY_ENABLE = no
 
 # Enable WS2812 RGB underlight
-RGBLIGHT_ENABLE = yes
+#RGBLIGHT_ENABLE = yes
 
 # Link-Time-Optimization: for small firmware
 LTO_ENABLE = yes
+
+# Enable RGB Matrix
+RGBLIGHT_ENABLE = no
+RGB_MATRIX_ENABLE = yes
