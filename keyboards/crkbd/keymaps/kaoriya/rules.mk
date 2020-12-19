@@ -4,12 +4,15 @@ OLED_DRIVER_ENABLE = yes
 # NO mouse keys
 MOUSEKEY_ENABLE = no
 
+# Audio control and System control: for Vol+, Vol-, and Mute
+EXTRAKEY_ENABLE = yes
+
 # Enable WS2812 RGB underlight
-#RGBLIGHT_ENABLE = yes
+RGBLIGHT_ENABLE = yes
 
 # Link-Time-Optimization: for small firmware
 LTO_ENABLE = yes
 
 # Enable RGB Matrix
-RGBLIGHT_ENABLE = no
-RGB_MATRIX_ENABLE = yes
+#RGBLIGHT_ENABLE = no
+#RGB_MATRIX_ENABLE = yes
