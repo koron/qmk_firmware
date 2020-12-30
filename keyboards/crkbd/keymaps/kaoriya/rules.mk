@@ -1,8 +1,9 @@
 # Enable OLED
 OLED_DRIVER_ENABLE = yes
+SRC += oled.c
 
-# NO mouse keys
-MOUSEKEY_ENABLE = no
+# Mouse keys
+MOUSEKEY_ENABLE = yes
 
 # Audio control and System control: for Vol+, Vol-, and Mute
 EXTRAKEY_ENABLE = yes
@@ -13,6 +14,6 @@ RGBLIGHT_ENABLE = yes
 # Link-Time-Optimization: for small firmware
 LTO_ENABLE = yes
 
-# Enable RGB Matrix
-RGBLIGHT_ENABLE = no
-RGB_MATRIX_ENABLE = yes
+## Enable RGB Matrix
+#RGBLIGHT_ENABLE = no
+#RGB_MATRIX_ENABLE = yes
