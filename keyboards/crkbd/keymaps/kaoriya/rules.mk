@@ -1,3 +1,7 @@
+SRC += layer.c
+# Enable console, disable OLED or RGBLIGHT
+#CONSOLE_ENABLE = yes
+
 # Enable OLED
 OLED_DRIVER_ENABLE = yes
 SRC += oled.c
