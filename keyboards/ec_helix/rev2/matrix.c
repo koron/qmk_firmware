@@ -555,16 +555,30 @@ matrix_row_t matrix_get_row(uint8_t row)
     return matrix[row];
 }
 
+#if (MATRIX_COLS <= 8)
+#    define print_matrix_header() print("\nr/c 01234567\n")
+#    define print_matrix_row(row) print_bin_reverse8(matrix_get_row(row))
+#    define matrix_bitpop(row) bitpop(matrix_get_row(row))
+#elif (MATRIX_COLS <= 16)
+#    define print_matrix_header() print("\nr/c 0123456789ABCDEF\n")
+#    define print_matrix_row(row) print_bin_reverse16(matrix_get_row(row))
+#    define matrix_bitpop(row) bitpop16(matrix_get_row(row))
+#elif (MATRIX_COLS <= 32)
+#    define print_matrix_header() print("\nr/c 0123456789ABCDEF0123456789ABCDEF\n")
+#    define print_matrix_row(row) print_bin_reverse32(matrix_get_row(row))
+#    define matrix_bitpop(row) bitpop32(matrix_get_row(row))
+#endif
+
 void matrix_print(void)
 {
-#if 0
-    print("\nr/c 0123456789ABCDEF\n");
+    print_matrix_header();
+
     for (uint8_t row = 0; row < MATRIX_ROWS; row++) {
-        phex(row); print(": ");
-        pbin_reverse16(matrix_get_row(row));
+        print_hex8(row);
+        print(": ");
+        print_matrix_row(row);
         print("\n");
     }
-#endif
 }
 
 uint8_t matrix_key_count(void)

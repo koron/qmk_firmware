@@ -207,3 +207,10 @@ void oled_task_user(void) {
     }
 }
 #endif
+
+#ifdef RGBLIGHT_ENABLE
+void keyboard_post_init_user(void) {
+  rgblight_enable_noeeprom();
+  rgblight_mode_noeeprom(RGBLIGHT_MODE_RGB_TEST);
+}
+#endif
