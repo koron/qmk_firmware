@@ -24,3 +24,5 @@ along with this program.  If not, see <http://www.gnu.org/licenses/>.
 
 // If you need more program area, try select and reduce rgblight modes to use.
 
+// for test/debug purpose
+//#define MASTER_RIGHT
