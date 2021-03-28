@@ -30,13 +30,8 @@ along with this program.  If not, see <http://www.gnu.org/licenses/>.
 #include "util.h"
 #include "matrix.h"
 #include "split_util.h"
+#include "transport.h"
 #include "quantum.h"
-
-#ifdef USE_MATRIX_I2C
-#  include "i2c.h"
-#else // USE_SERIAL
-#  include "split_scomm.h"
-#endif
 
 #ifndef DEBOUNCE
 #  define DEBOUNCE 5
@@ -70,16 +65,16 @@ along with this program.  If not, see <http://www.gnu.org/licenses/>.
 
 static const uint8_t row_pins[] = MATRIX_ROW_PINS;
 static const uint8_t col_pins[] = MATRIX_COL_PINS;
-static uint8_t error_count = 0;
-uint8_t is_master = 0 ;
 
 /* matrix state(1:on, 0:off) */
 static matrix_row_t matrix[MATRIX_ROWS];
 static uint8_t debounce[KEY_NUM];
 uint32_t timer_1ms;
 
-static uint8_t matrix_master_scan(void);
+// row offsets for each hand
+uint8_t thisHand, thatHand;
 
+//static uint8_t matrix_master_scan(void);
 
 __attribute__ ((weak))
 void matrix_init_kb(void) {
@@ -366,7 +361,10 @@ void get_matrix_key_val(uint8_t col, uint8_t row, uint8_t* val, uint8_t *thresho
 
 void matrix_init(void)
 {
-    split_keyboard_setup();
+    split_pre_init();
+
+    thisHand = isLeftHand ? 0 : (ROWS_PER_HAND);
+    thatHand = ROWS_PER_HAND - thisHand;
 
     // initialize key pins
     init_pins();
@@ -386,167 +384,55 @@ void matrix_init(void)
 		debounce[k]=0;
     }
 
-    is_master = is_helix_master();
-
     matrix_init_quantum();
+
+    split_post_init();
 }
 
-uint8_t _matrix_scan(void)
-{
-    // Right hand is stored after the left in the matirx so, we need to offset it
-    int offset = isLeftHand ? 0 : (ROWS_PER_HAND);
-    read_all(matrix, offset);
-    return 1;
-}
-
-#ifdef USE_MATRIX_I2C
-
-// Get rows from other half over i2c
-int i2c_transaction(void) {
-    int slaveOffset = (isLeftHand) ? (ROWS_PER_HAND) : 0;
-
-    int err = i2c_master_start(SLAVE_I2C_ADDRESS + I2C_WRITE);
-    if (err) goto i2c_error;
-
-    // start of matrix stored at 0x00
-    err = i2c_master_write(0x00);
-    if (err) goto i2c_error;
-
-    // Start read
-    err = i2c_master_start(SLAVE_I2C_ADDRESS + I2C_READ);
-    if (err) goto i2c_error;
-
-    if (!err) {
-        int i;
-        for (i = 0; i < ROWS_PER_HAND-1; ++i) {
-            matrix[slaveOffset+i] = i2c_master_read(I2C_ACK);
-        }
-        matrix[slaveOffset+i] = i2c_master_read(I2C_NACK);
-        i2c_master_stop();
-    } else {
-i2c_error: // the cable is disconnceted, or something else went wrong
-        i2c_reset_state();
-        return err;
+static bool matrix_post_scan(void) {
+    if (!is_keyboard_master()) {
+        transport_slave(matrix + thatHand, matrix + thisHand);
+        //matrix_slave_scan_user();
+        return false;
     }
 
-    return 0;
-}
-
-#else // USE_SERIAL
-
-int serial_transaction(int master_changed) {
-    int slaveOffset = (isLeftHand) ? (ROWS_PER_HAND) : 0;
-#ifdef SERIAL_USE_MULTI_TRANSACTION
-    int ret=serial_update_buffers(master_changed);
-#else
-    int ret=serial_update_buffers();
-#endif
-    if (ret ) {
-        if(ret==2) writePinLow(B0);
-        return 1;
-    }
-    writePinHigh(B0);
-    memcpy(&matrix[slaveOffset],
-        (void *)serial_slave_buffer, sizeof(serial_slave_buffer));
-    return 0;
-}
-#endif
-
-uint8_t matrix_scan(void)
-{
-    if (is_master) {
-        matrix_master_scan();
-    }else{
-        matrix_slave_scan();
-#ifndef USE_MATRIX_I2C
-        int offset = (isLeftHand) ? ROWS_PER_HAND : 0;
-        memcpy(&matrix[offset],
-               (void *)serial_master_buffer, sizeof(serial_master_buffer));
-#endif
-        matrix_scan_quantum();
-    }
-    return 1;
-}
-
-
-uint8_t matrix_master_scan(void) {
-
-    int ret = _matrix_scan();
-
-#ifdef USE_MATRIX_I2C
-//    for (int i = 0; i < ROWS_PER_HAND; ++i) {
-        /* i2c_slave_buffer[i] = matrix[offset+i]; */
-//        i2c_slave_buffer[i] = matrix[offset+i];
-//    }
-#else // USE_SERIAL
-  int mchanged = 1;
-  int offset = (isLeftHand) ? 0 : ROWS_PER_HAND;
-  #ifdef SERIAL_USE_MULTI_TRANSACTION
-    mchanged = memcmp((void *)serial_master_buffer,
-		      &matrix[offset], sizeof(serial_master_buffer));
-  #endif
-    memcpy((void *)serial_master_buffer,
-	   &matrix[offset], sizeof(serial_master_buffer));
-#endif
-
-#ifdef USE_MATRIX_I2C
-    if( i2c_transaction() ) {
-#else // USE_SERIAL
-    if( serial_transaction(mchanged) ) {
-#endif
+    bool changed = false;
+    static uint8_t error_count;
+    matrix_row_t slave_matrix[ROWS_PER_HAND] = {0};
+    if (!transport_master(matrix + thisHand, slave_matrix)) {
         error_count++;
-
         if (error_count > ERROR_DISCONNECT_COUNT) {
             // reset other half if disconnected
-            int slaveOffset = (isLeftHand) ? (ROWS_PER_HAND) : 0;
             for (int i = 0; i < ROWS_PER_HAND; ++i) {
-                matrix[slaveOffset+i] = 0;
+                matrix[thatHand + i] = 0;
+                slave_matrix[i]      = 0;
             }
+            changed = true;
         }
     } else {
-        // turn off the indicator led on no error
         error_count = 0;
+        for (int i = 0; i < ROWS_PER_HAND; ++i) {
+            if (matrix[thatHand + i] != slave_matrix[i]) {
+                matrix[thatHand + i] = slave_matrix[i];
+                changed              = true;
+            }
+        }
     }
     matrix_scan_quantum();
-    return ret;
+    return changed;
 }
 
-void matrix_slave_scan(void) {
-    _matrix_scan();
-
-    int offset = (isLeftHand) ? 0 : ROWS_PER_HAND;
-
-#ifdef USE_MATRIX_I2C
-    for (int i = 0; i < ROWS_PER_HAND; ++i) {
-        /* i2c_slave_buffer[i] = matrix[offset+i]; */
-        i2c_slave_buffer[i] = matrix[offset+i];
-    }
-#else // USE_SERIAL
-  #ifdef SERIAL_USE_MULTI_TRANSACTION
-    int change = 0;
-  #endif
-    for (int i = 0; i < ROWS_PER_HAND; ++i) {
-  #ifdef SERIAL_USE_MULTI_TRANSACTION
-        if( serial_slave_buffer[i] != matrix[offset+i] )
-	    change = 1;
-  #endif
-        serial_slave_buffer[i] = matrix[offset+i];
-    }
-  #ifdef SERIAL_USE_MULTI_TRANSACTION
-    slave_buffer_change_count += change;
-  #endif
-#endif
+uint8_t matrix_scan(void) {
+    int offset = isLeftHand ? 0 : (ROWS_PER_HAND);
+    bool local_changed = read_all(matrix, offset) > 0;
+    bool remote_changed = matrix_post_scan();
+    return (uint8_t)(local_changed || remote_changed);
 }
 
+// Deprecated.
 bool matrix_is_modified(void)
 {
     return true;
-}
-
-inline
-bool matrix_is_on(uint8_t row, uint8_t col)
-{
-    return (matrix[row] & ((matrix_row_t)1<<col));
 }
 
 inline
@@ -579,13 +465,4 @@ void matrix_print(void)
         print_matrix_row(row);
         print("\n");
     }
-}
-
-uint8_t matrix_key_count(void)
-{
-    uint8_t count = 0;
-    for (uint8_t i = 0; i < MATRIX_ROWS; i++) {
-        count += bitpop16(matrix[i]);
-    }
-    return count;
 }

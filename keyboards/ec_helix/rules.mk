@@ -30,7 +30,6 @@ SLEEP_LED_ENABLE = no   # Breathing sleep LED during USB suspend
 NKRO_ENABLE = no        # USB Nkey Rollover
 BACKLIGHT_ENABLE = no   # Enable keyboard backlight functionality
 RGBLIGHT_ENABLE = yes   # Enable WS2812 RGB underlight.
-LED_ANIMATIONS = yes    # LED animations
 MIDI_ENABLE = no        # MIDI support
 BLUETOOTH_ENABLE = no   # Enable Bluetooth with the Adafruit EZ-Key HID
 AUDIO_ENABLE = no       # Audio output on port C6
@@ -38,16 +37,12 @@ FAUXCLICKY_ENABLE = no  # Use buzzer to emulate clicky switches
 HD44780_ENABLE = no     # Enable support for HD44780 based LCDs
 
 DEFAULT_FOLDER = ec_helix/rev2
-KEYBD_TOP_DIR := $(patsubst %/,%,$(dir $(lastword $(MAKEFILE_LIST))))
-KEYBOARD_PATHS += $(KEYBD_TOP_DIR)/local_drivers
 
 CUSTOM_MATRIX = yes
 
-SRC += local_drivers/serial.c
-#SRC += local_drivers/i2c.c
 SRC += rev2/matrix.c
-SRC += rev2/split_util.c
-SRC += rev2/split_scomm.c
 
 # Link-Time-Optimization: for small firmware
 LTO_ENABLE = yes
+
+SPLIT_KEYBOARD = yes

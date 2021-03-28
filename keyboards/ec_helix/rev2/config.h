@@ -38,7 +38,7 @@ along with this program.  If not, see <http://www.gnu.org/licenses/>.
 
 /* Soft Serial defines */
 #define SOFT_SERIAL_PIN D2
-#define SERIAL_USE_MULTI_TRANSACTION
+//#define SERIAL_USE_MULTI_TRANSACTION
 
 #if !defined(SERIAL_USE_MULTI_TRANSACTION) || defined(USE_MATRIX_I2C)
 #define SERIAL_SLAVE_BUFFER_LENGTH  ((MATRIX_ROWS)/2)
@@ -67,19 +67,15 @@ along with this program.  If not, see <http://www.gnu.org/licenses/>.
 #define RGB_DI_PIN D3
 
 // keyboard RGB LED support
-#define RGBLED_NUM 32
+#define RGBLED_NUM 27
 #define RGBLIGHT_ANIMATIONS
+#define RGBLIGHT_LIMIT_VAL 100
+#define RGBLIGHT_VAL_STEP 10
+#define RGBLIGHT_HUE_STEP 17
+#define RGBLIGHT_SAT_STEP 17
+#define RGBLIGHT_SPLIT
 
 #define OLED_FONT_H "common/glcdfont.c"
-#ifndef IOS_DEVICE_ENABLE
-  #define RGBLIGHT_LIMIT_VAL 200
-  #define RGBLIGHT_VAL_STEP 17
-#else
-  #define RGBLIGHT_LIMIT_VAL 35
-  #define RGBLIGHT_VAL_STEP 4
-#endif
-#define RGBLIGHT_HUE_STEP 10
-#define RGBLIGHT_SAT_STEP 17
 
 #if defined(RGBLIGHT_ENABLE) && !defined(IOS_DEVICE_ENABLE)
 // USB_MAX_POWER_CONSUMPTION value for Helix keyboard
