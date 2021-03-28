@@ -44,7 +44,7 @@ KEYBOARD_PATHS += $(KEYBD_TOP_DIR)/local_drivers
 CUSTOM_MATRIX = yes
 
 SRC += local_drivers/serial.c
-SRC += local_drivers/i2c.c
+#SRC += local_drivers/i2c.c
 SRC += rev2/matrix.c
 SRC += rev2/split_util.c
 SRC += rev2/split_scomm.c
