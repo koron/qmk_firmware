@@ -23,6 +23,14 @@ COMPILEFLAGS += -ffunction-sections
 COMPILEFLAGS += -fdata-sections
 COMPILEFLAGS += -fpack-struct
 COMPILEFLAGS += -fshort-enums
+COMPILEFLAGS += -mcall-prologues
+COMPILEFLAGS += -fno-builtin-printf
+
+# Linker relaxation is only possible if
+# link time optimizations are not enabled.
+ifeq ($(strip $(LTO_ENABLE)), no)
+	COMPILEFLAGS += -mrelax
+endif
 
 ASFLAGS += $(AVR_ASFLAGS)
 
@@ -31,9 +39,18 @@ CFLAGS += -fno-inline-small-functions
 CFLAGS += -fno-strict-aliasing
 
 CXXFLAGS += $(COMPILEFLAGS)
-CXXFLAGS += -fno-exceptions -std=c++11
+CXXFLAGS += -fno-exceptions $(CXXSTANDARD)
 
-LDFLAGS +=-Wl,--gc-sections
+LDFLAGS += -Wl,--gc-sections
+
+# Use AVR's libc minimal printf implementation which has less features
+# and thus can shave ~400 bytes. Usually we use the xprintf
+# implementation but keyboards that use s(n)printf automatically
+# pull in the AVR libc implementation, which is ~900 bytes heavy.
+AVR_USE_MINIMAL_PRINTF ?= no
+ifeq ($(strip $(AVR_USE_MINIMAL_PRINTF)), yes)
+	LDFLAGS += -Wl,--whole-archive -lprintf_min -Wl,--no-whole-archive
+endif
 
 OPT_DEFS += -DF_CPU=$(F_CPU)UL
 
