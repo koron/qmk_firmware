@@ -26,4 +26,4 @@ UNICODE_ENABLE = no
 BLUETOOTH_ENABLE = no
 
 # Extra modules and drivers
-SRC += ws2812.c
+WS2812_DRIVER_REQUIRED = yes
