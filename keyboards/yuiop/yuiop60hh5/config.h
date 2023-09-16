@@ -15,8 +15,6 @@ along with this program.  If not, see <http://www.gnu.org/licenses/>.
 
 #pragma once
 
-#include "config_common.h"
-
 // Key matrix size and pins
 #define MATRIX_ROWS 5
 #define MATRIX_COLS 15
@@ -37,7 +35,8 @@ along with this program.  If not, see <http://www.gnu.org/licenses/>.
 #undef LOCKING_RESYNC_ENABLE
 
 // RGB LED settings
-#define RGB_DI_PIN B3
+#define R
+#define WS2812_DI_PIN B3
 #ifdef RGBLIGHT_ENABLE
 #    define RGBLED_NUM 3
 #    define RGBLIGHT_ANIMATIONS
