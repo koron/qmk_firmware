@@ -2,10 +2,13 @@
 
 #include <avr/timer_avr.h>
 #include <avr/wdt.h>
-#include "audio.h"
 #include "issi.h"
 #include "TWIlib.h"
 #include "lighting.h"
+
+#ifdef AUDIO_ENABLE
+#    include "audio.h"
+#endif
 
 uint16_t click_hz = CLICK_HZ;
 uint16_t click_time = CLICK_MS;
@@ -110,7 +113,7 @@ void matrix_scan_kb(void) {
     matrix_scan_user();
 }
 
-void click(uint16_t freq, uint16_t duration) {
+void clicking_notes(uint16_t freq, uint16_t duration) {
 #ifdef AUDIO_ENABLE
     if (freq >= 100 && freq <= 20000 && duration < 100) {
         play_note(freq, 10);
@@ -124,10 +127,10 @@ void click(uint16_t freq, uint16_t duration) {
 
 bool process_record_kb(uint16_t keycode, keyrecord_t* record) {
     if (click_toggle && record->event.pressed) {
-        click(click_hz, click_time);
+        clicking_notes(click_hz, click_time);
     }
 
-    if (keycode == RESET) {
+    if (keycode == QK_BOOT) {
         reset_keyboard_kb();
     }
 
@@ -148,11 +151,12 @@ void reset_keyboard_kb() {
     reset_keyboard();
 }
 
-void led_set_kb(uint8_t usb_led) {
-    // put your keyboard LED indicator (ex: Caps Lock LED) toggling code here
+bool led_update_kb(led_t led_state) {
+    bool res = led_update_user(led_state);
+    if(res) {
 #ifdef ISSI_ENABLE
 #    ifdef CAPSLOCK_LED
-    if (usb_led & (1 << USB_LED_CAPS_LOCK)) {
+    if (led_state.caps_lock) {
         activateLED(0, 3, 7, 255);
     } else {
         activateLED(0, 3, 7, 0);
@@ -160,7 +164,8 @@ void led_set_kb(uint8_t usb_led) {
 #    endif // CAPSLOCK_LED
 #endif // ISS_ENABLE
 
-    led_set_user(usb_led);
+    }
+    return res;
 }
 
 // LFK lighting info

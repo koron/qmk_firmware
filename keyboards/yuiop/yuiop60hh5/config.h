@@ -17,15 +17,6 @@ along with this program.  If not, see <http://www.gnu.org/licenses/>.
 
 #include "config_common.h"
 
-// USB Device descriptor parameter
-#define VENDOR_ID 0x7890
-#define PRODUCT_ID 0x000a
-#define DEVICE_VER 0x0001
-#define MANUFACTURER koron
-
-#define PRODUCT YUIOP60HH5
-#define DESCRIPTION Experimental Keyboard
-
 // Key matrix size and pins
 #define MATRIX_ROWS 5
 #define MATRIX_COLS 15
@@ -44,8 +35,6 @@ along with this program.  If not, see <http://www.gnu.org/licenses/>.
 // To squeeze firmware size
 #undef LOCKING_SUPPORT_ENABLE
 #undef LOCKING_RESYNC_ENABLE
-#define NO_ACTION_MACRO
-#define NO_ACTION_FUNCTION
 
 // RGB LED settings
 #define RGB_DI_PIN B3
