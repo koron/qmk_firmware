@@ -125,6 +125,15 @@ void pointing_device_driver_init(void) {
     keyball.this_have_ball = pmw3360_init();
 #endif
     if (keyball.this_have_ball) {
+#if defined(KEYBALL_PMW3360_UPLOAD_SROM_ID)
+#    if KEYBALL_PMW3360_UPLOAD_SROM_ID == 0x04
+        pmw3360_srom_upload(pmw3360_srom_0x04);
+#    elif KEYBALL_PMW3360_UPLOAD_SROM_ID == 0x81
+        pmw3360_srom_upload(pmw3360_srom_0x81);
+#    else
+#        error Invalid value for KEYBALL_PMW3360_UPLOAD_SROM_ID. Please choose 0x04 or 0x81 or disable it.
+#    endif
+#endif
         pmw3360_cpi_set(CPI_DEFAULT - 1);
     }
 }
