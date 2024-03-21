@@ -139,10 +139,12 @@ void inline pmw3360_spi_stop(void) {
     spi_stop();
 }
 
+/// \deprecated use pmw3360_reg_write() instead of this.
 spi_status_t inline pmw3360_spi_write(uint8_t data) {
     return spi_write(data);
 }
 
+/// \deprecated use pmw3360_reg_read() instead of this.
 spi_status_t inline pmw3360_spi_read(void) {
     return spi_read();
 }

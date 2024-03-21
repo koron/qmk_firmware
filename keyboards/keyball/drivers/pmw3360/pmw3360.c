@@ -22,6 +22,8 @@ along with this program.  If not, see <http://www.gnu.org/licenses/>.
 #define PMW3360_SPI_DIVISOR (F_CPU / PMW3360_CLOCKS)
 #define PMW3360_CLOCKS 2000000
 
+static bool motion_bursting = false;
+
 bool pmw3360_spi_start(void) {
     return spi_start(PMW3360_NCS_PIN, false, PMW3360_SPI_MODE, PMW3360_SPI_DIVISOR);
 }
@@ -31,8 +33,14 @@ uint8_t pmw3360_reg_read(uint8_t addr) {
     spi_write(addr & 0x7f);
     wait_us(160);
     uint8_t data = spi_read();
+    wait_us(1);
     spi_stop();
-    wait_us(20);
+    wait_us(19);
+    // Reset motion_bursting mode if read from a register other than motion
+    // burst register.
+    if (addr != pmw3360_Motion_Burst) {
+        motion_bursting = false;
+    }
     return data;
 }
 
@@ -40,8 +48,9 @@ void pmw3360_reg_write(uint8_t addr, uint8_t data) {
     pmw3360_spi_start();
     spi_write(addr | 0x80);
     spi_write(data);
+    wait_us(35);
     spi_stop();
-    wait_us(180);
+    wait_us(145);
 }
 
 uint8_t pmw3360_cpi_get(void) {
@@ -95,20 +104,24 @@ bool pmw3360_motion_burst(pmw3360_motion_t *d) {
 #ifdef DEBUG_PMW3360_SCAN_RATE
     pmw3360_scan_perf_task();
 #endif
+    // Start motion burst if motion burst mode is not started.
+    if (!motion_bursting) {
+        pmw3360_reg_write(pmw3360_Motion_Burst, 0);
+        motion_bursting = true;
+    }
+
     pmw3360_spi_start();
     spi_write(pmw3360_Motion_Burst);
     wait_us(35);
-    uint8_t mot = spi_read();
-    if ((mot & 0x88) != 0x80) {
-        spi_stop();
-        return false;
-    }
+    spi_read(); // skip MOT
     spi_read(); // skip Observation
     d->x = spi_read();
     d->x |= spi_read() << 8;
     d->y = spi_read();
     d->y |= spi_read() << 8;
     spi_stop();
+    // Required NCS in 500ns after motion burst.
+    wait_us(1);
     return true;
 }
 
