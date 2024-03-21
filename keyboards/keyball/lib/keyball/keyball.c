@@ -23,6 +23,8 @@ along with this program.  If not, see <http://www.gnu.org/licenses/>.
 #include "keyball.h"
 #include "drivers/pmw3360/pmw3360.h"
 
+#include <string.h>
+
 const uint8_t CPI_DEFAULT    = KEYBALL_CPI_DEFAULT / 100;
 const uint8_t CPI_MAX        = pmw3360_MAXCPI + 1;
 const uint8_t SCROLL_DIV_MAX = 7;
@@ -407,27 +409,15 @@ void keyball_oled_render_keyinfo(void) {
     oled_write_char(to_1x(keyball.last_pos.row), false);
     oled_write_P(PSTR("  C"), false);
     oled_write_char(to_1x(keyball.last_pos.col), false);
-    if (keycode) {
-        oled_write_P(PSTR(" K"), false);
-        oled_write_char(to_1x(keycode >> 4), false);
-        oled_write_char(to_1x(keycode), false);
-    } else {
-        oled_write_P(PSTR("     "), false);
-    }
-    // pads spaces to align pressing keys to the right
+    oled_write_P(PSTR(" K"), false);
+    oled_write_char(to_1x(keycode >> 4), false);
+    oled_write_char(to_1x(keycode), false);
+
+    // Draw pressing keys.
     oled_write_char(' ', false);
-    for (int i=0; i<KEYBALL_OLED_MAX_PRESSING_KEYCODES; i++) {
-        if (keyball.pressing_kc[i] == 0) {
-            oled_write_char(' ', false);
-        }
-    }
-    // then, writes pressing keys
-    for (int i=0; i<KEYBALL_OLED_MAX_PRESSING_KEYCODES; i++) {
-        if (keyball.pressing_kc[i]) {
-            // safety: if only 4 <= key < 57 keycodes are saved
-            char name = pgm_read_byte(code_to_name + keyball.pressing_kc[i] - 4);
-            oled_write_char(name, false);
-        }
+    for (int i = 0; i < KEYBALL_OLED_MAX_PRESSING_KEYCODES; i++) {
+        char name = keyball.pressing_kc[i] == 0 ? ' ' :pgm_read_byte(code_to_name + keyball.pressing_kc[i] - 4);
+        oled_write_char(name, false);
     }
 #endif
 }
@@ -520,29 +510,48 @@ void housekeeping_task_kb(void) {
 }
 #endif
 
-bool process_record_kb(uint16_t keycode, keyrecord_t *record) {
-    // update pressing_kc for OLED
-    uint8_t lower_keycode = keycode;
-    for (int i=0; i<KEYBALL_OLED_MAX_PRESSING_KEYCODES; i++) {
-        // releases the slot if the key is released
-        if (!record->event.pressed && keyball.pressing_kc[i] == lower_keycode) {
-            keyball.pressing_kc[i] = 0;
-            break;
-        }
-        // stores the pressed key if the slot is vacant
-        if (record->event.pressed && keyball.pressing_kc[i] == 0) {
-            // store only valid keycodes
-            // This simplifies the code for OLED printing.
-            if (lower_keycode >= 4 && lower_keycode < 57) {
-                keyball.pressing_kc[i] = lower_keycode;
+static void pressing_key_append(uint8_t key) {
+    // Move slots forward one slot, then insert the pressed key at the last.
+    for (int i = 0; i < KEYBALL_OLED_MAX_PRESSING_KEYCODES - 1; i++) {
+        keyball.pressing_kc[i] = keyball.pressing_kc[i + 1];
+    }
+    keyball.pressing_kc[KEYBALL_OLED_MAX_PRESSING_KEYCODES - 1] = key;
+}
+
+static void pressing_key_remove(uint8_t key) {
+    // Move slots before a released key backword one slot, and fill first slot with zero.
+    for (int i = KEYBALL_OLED_MAX_PRESSING_KEYCODES - 1; i >= 0; i--) {
+        if (keyball.pressing_kc[i] == key) {
+            while (i > 0) {
+                keyball.pressing_kc[i] = keyball.pressing_kc[i - 1];
+                i--;
             }
-            // no need to check other slots in either case above
+            keyball.pressing_kc[0] = 0;
             break;
         }
     }
+}
+
+static void pressing_keys_update(uint16_t keycode, keyrecord_t *record) {
+    // Process only valid keycodes.  This simplifies the code for OLED
+    // printing.
+    if (keycode >= 4 || keycode < 57) {
+        // Only lower 8-bits are necessary to show pressing keys.
+        uint8_t low = keycode;
+        if (record->event.pressed) {
+            pressing_key_append(low);
+        } else {
+            pressing_key_remove(low);
+        }
+    }
+}
+
+bool process_record_kb(uint16_t keycode, keyrecord_t *record) {
     // store last keycode, row, and col for OLED
     keyball.last_kc  = keycode;
     keyball.last_pos = record->event.key;
+
+    pressing_keys_update(keycode, record);
 
     if (!process_record_user(keycode, record)) {
         return false;
