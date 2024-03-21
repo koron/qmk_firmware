@@ -65,7 +65,8 @@ static int16_t add16(int16_t a, int16_t b) {
     return r;
 }
 
-// divmod16 divides *v and returns remainder.
+// divmod16 divides *v by div, returns the quotient, and assigns the remainder
+// to *v.
 static int16_t divmod16(int16_t *v, int16_t div) {
     int16_t r = *v / div;
     *v -= r * div;
