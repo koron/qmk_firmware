@@ -141,7 +141,7 @@ typedef struct {
     report_mouse_t last_mouse;
 
     // Buffer to indicate pressing keys.
-    uint8_t pressing_kc[KEYBALL_OLED_MAX_PRESSING_KEYCODES];
+    char pressing_keys[KEYBALL_OLED_MAX_PRESSING_KEYCODES + 1];
 } keyball_t;
 
 typedef enum {

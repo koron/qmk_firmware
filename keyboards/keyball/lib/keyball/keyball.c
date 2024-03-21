@@ -43,7 +43,7 @@ keyball_t keyball = {
     .scroll_mode = false,
     .scroll_div  = 0,
 
-    .pressing_kc = {0},
+    .pressing_keys = {' ', ' ', ' ', 0},
 };
 
 //////////////////////////////////////////////////////////////////////////////
@@ -413,12 +413,10 @@ void keyball_oled_render_keyinfo(void) {
     oled_write_char(to_1x(keycode >> 4), false);
     oled_write_char(to_1x(keycode), false);
 
-    // Draw pressing keys.
     oled_write_char(' ', false);
-    for (int i = 0; i < KEYBALL_OLED_MAX_PRESSING_KEYCODES; i++) {
-        char name = keyball.pressing_kc[i] == 0 ? ' ' :pgm_read_byte(code_to_name + keyball.pressing_kc[i] - 4);
-        oled_write_char(name, false);
-    }
+
+    // Draw pressing keys.
+    oled_write(keyball.pressing_keys, false);
 #endif
 }
 
@@ -510,38 +508,22 @@ void housekeeping_task_kb(void) {
 }
 #endif
 
-static void pressing_key_append(uint8_t key) {
-    // Move slots forward one slot, then insert the pressed key at the last.
-    for (int i = 0; i < KEYBALL_OLED_MAX_PRESSING_KEYCODES - 1; i++) {
-        keyball.pressing_kc[i] = keyball.pressing_kc[i + 1];
-    }
-    keyball.pressing_kc[KEYBALL_OLED_MAX_PRESSING_KEYCODES - 1] = key;
-}
-
-static void pressing_key_remove(uint8_t key) {
-    // Move slots before a released key backword one slot, and fill first slot with zero.
-    for (int i = KEYBALL_OLED_MAX_PRESSING_KEYCODES - 1; i >= 0; i--) {
-        if (keyball.pressing_kc[i] == key) {
-            while (i > 0) {
-                keyball.pressing_kc[i] = keyball.pressing_kc[i - 1];
-                i--;
-            }
-            keyball.pressing_kc[0] = 0;
-            break;
-        }
-    }
-}
-
 static void pressing_keys_update(uint16_t keycode, keyrecord_t *record) {
-    // Process only valid keycodes.  This simplifies the code for OLED
-    // printing.
+    // Process only valid keycodes.
     if (keycode >= 4 || keycode < 57) {
-        // Only lower 8-bits are necessary to show pressing keys.
-        uint8_t low = keycode;
-        if (record->event.pressed) {
-            pressing_key_append(low);
-        } else {
-            pressing_key_remove(low);
+        char value = pgm_read_byte(code_to_name + keycode - 4);
+        char where = ' ';
+        if (!record->event.pressed) {
+            // Swap `value` and `where` when releasing.
+            where = value;
+            value = ' ';
+        }
+        // Rewrite the last `where` of pressing_keys to `value` .
+        for (int i = KEYBALL_OLED_MAX_PRESSING_KEYCODES - 1; i >= 0; i--) {
+            if (keyball.pressing_keys[i] == where) {
+                keyball.pressing_keys[i] = value;
+                break;
+            }
         }
     }
 }
