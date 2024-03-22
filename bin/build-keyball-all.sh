@@ -2,6 +2,9 @@
 
 set -u
 
+id=$(date "+%Y%m%d_%H%M%S")
+logdir=tmp/build_log/${id}
+
 keyboards=()
 keyboards+=(keyball39)
 keyboards+=(keyball44)
@@ -14,6 +17,8 @@ keymaps+=(test)
 keymaps+=(default)
 keymaps+=(via)
 
+mkdir -p ${logdir}
+
 for kb in "${keyboards[@]}" ; do
   tmpmaps=(${keymaps[@]})
   # Add special keymaps for keyball46
@@ -22,8 +27,10 @@ for kb in "${keyboards[@]}" ; do
     tmpmaps+=(via_Left via_Both)
   fi
   for km in "${tmpmaps[@]}" ; do
-    echo "# build $kb:$km"
-    make SKIP_GIT=yes KEEP_BIN=true "keyball/${kb}:${km}"
-    echo ""
+    ( make SKIP_GIT=yes KEEP_BIN=true COLOR=false "keyball/${kb}:${km}" 2>&1 | tee "${logdir}/${kb}-${km}.log" | LANG=C.utf-8 ts "[${kb}:${km}]" ) &
   done
 done
+
+wait
+
+$(dirname "$0")/hexsize.sh keyball_*.hex | tee "${logdir}/size.tsv"
