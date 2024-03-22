@@ -11,7 +11,7 @@ sqlite3 ':memory:' \
   ".import ${before} b" \
   ".import ${after} a" \
   ".mode ${format}" \
-  "select b.name as name, format('%,d', b.size) as before, format('%,d', a.size) as after, format('%+,d', a.size - b.size) as diff from b join a on a.name = b.name;" \
+  "select b.name as name, format('%,d', b.size) as before, format('%,d', a.size) as after, format('%+,d', a.size - b.size) as diff, case when a.size > 28672 then 'X' else '' end as oversized from b join a on a.name = b.name;" \
   ".print ''" \
   "select format('%+g', avg(a.size - b.size)) as 'avg(diff)' from b join a on a.name = b.name;"
   
