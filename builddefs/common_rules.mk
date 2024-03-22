@@ -382,6 +382,7 @@ objs-size:
 
 ifeq ($(findstring avr-gcc,$(CC)),avr-gcc)
 SIZE_MARGIN = 1024
+KEEP_BIN ?= false
 
 check-size:
 	$(eval MAX_SIZE=$(shell n=`$(CC) -E -mmcu=$(MCU) -D__ASSEMBLER__ $(CFLAGS) $(OPT_DEFS) platforms/avr/bootloader_size.c 2> /dev/null | $(SED) -ne 's/\r//;/^#/n;/^AVR_SIZE:/,$${s/^AVR_SIZE: //;p;}'` && echo $$(($$n)) || echo 0))
@@ -392,8 +393,10 @@ check-size:
 	if [ $(MAX_SIZE) -gt 0 ] && [ $(CURRENT_SIZE) -gt 0 ]; then \
 		$(SILENT) || printf "$(MSG_CHECK_FILESIZE)" | $(AWK_CMD); \
 		if [ $(CURRENT_SIZE) -gt $(MAX_SIZE) ]; then \
+			$(KEEP_BIN) || ( \
 			$(REMOVE) $(TARGET).$(FIRMWARE_FORMAT); \
 			$(REMOVE) $(BUILD_DIR)/$(TARGET).{hex,bin,uf2}; \
+			); \
 		    printf "\n * $(MSG_FILE_TOO_BIG)"; $(PRINT_ERROR_PLAIN); \
 		else \
 		    if [ $(FREE_SIZE) -lt $(SIZE_MARGIN) ]; then \
