@@ -16,7 +16,7 @@ for keymap in "${keymaps[@]}" ; do
   firms+=(keyball_keyball46_${keymap}.hex)
 done
 
-make -j8 SKIP_GIT=yes "${targets[@]}"
+make SKIP_GIT=yes "${targets[@]}"
 
 outdir=tmp/firms/keyball46/${version}
 

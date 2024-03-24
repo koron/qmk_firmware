@@ -18,7 +18,7 @@ for keymap in "${keymaps[@]}" ; do
   firms+=(${series}_${keyboard}_${keymap}.hex)
 done
 
-make -j8 SKIP_GIT=yes "${targets[@]}"
+make SKIP_GIT=yes "${targets[@]}"
 
 outdir=tmp/firms/${keyboard}/${version}
 

@@ -9,6 +9,6 @@ for km in \
   re64:kaoriya \
   uzu42:kaoriya \
 ; do
-  make -j8 SKIP_GIT=yes $km:clean
-  make -j8 SKIP_GIT=yes $km
+  make SKIP_GIT=yes $km:clean
+  make SKIP_GIT=yes $km
 done

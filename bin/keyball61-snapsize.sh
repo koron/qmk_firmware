@@ -18,7 +18,7 @@ targets+=(keyball/keyball61:test)
 targets+=(keyball/keyball61:via)
 
 if [ $nobuild -eq 0 ] ; then
-  make -j16 SKIP_GIT=yes "${targets[@]}"
+  make SKIP_GIT=yes "${targets[@]}"
 fi
 
 out=$(date +tmp/snapsize/%Y%m%dT%H%M%S.log)
