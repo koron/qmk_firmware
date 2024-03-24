@@ -33,9 +33,9 @@ const uint16_t AML_TIMEOUT_MIN = 100;
 const uint16_t AML_TIMEOUT_MAX = 1000;
 const uint16_t AML_TIMEOUT_QU  = 50;   // Quantization Unit
 
-static const char BL = '\xC0'; // Blank indicator character
-static const char LFSTR_ON[] PROGMEM = "\xCB\xCC";
-static const char LFSTR_OFF[] PROGMEM = "\xCD\xCE";
+static const char BL = '\xB0'; // Blank indicator character
+static const char LFSTR_ON[] PROGMEM = "\xB2\xB3";
+static const char LFSTR_OFF[] PROGMEM = "\xB4\xB5";
 
 keyball_t keyball = {
     .this_have_ball = false,
@@ -386,19 +386,19 @@ void keyball_oled_render_ballinfo(void) {
     //     Ball: -12  34   0   0
 
     // 1st line, "Ball" label, mouse x, y, h, and v.
-    oled_write_P(PSTR("Ball\xBF"), false);
+    oled_write_P(PSTR("Ball\xB1"), false);
     oled_write(format_4d(keyball.last_mouse.x), false);
     oled_write(format_4d(keyball.last_mouse.y), false);
     oled_write(format_4d(keyball.last_mouse.h), false);
     oled_write(format_4d(keyball.last_mouse.v), false);
 
     // 2nd line, empty label and CPI
-    oled_write_P(PSTR("    \xBF\xC5\xC6"), false);
+    oled_write_P(PSTR("    \xB1\xBC\xBD"), false);
     oled_write(format_4d(keyball_get_cpi()) + 1, false);
     oled_write_P(PSTR("00 "), false);
 
     // indicate scroll mode: on/off
-    oled_write_P(PSTR("\xC7\xC8"), false);
+    oled_write_P(PSTR("\xBE\xBF"), false);
     if (keyball.scroll_mode) {
         oled_write_P(LFSTR_ON, false);
     } else {
@@ -406,7 +406,7 @@ void keyball_oled_render_ballinfo(void) {
     }
 
     // indicate scroll divider:
-    oled_write_P(PSTR(" \xC9\xCA"), false);
+    oled_write_P(PSTR(" \xC0\xC1"), false);
     oled_write_char('0' + keyball_get_scroll_div(), false);
 #endif
 }
@@ -433,16 +433,16 @@ void keyball_oled_render_keyinfo(void) {
     //     Ball:   0   0   0   0
 
     // "Key" Label
-    oled_write_P(PSTR("Key \xBF"), false);
+    oled_write_P(PSTR("Key \xB1"), false);
 
     // Row and column
-    oled_write_char('\xC1', false);
+    oled_write_char('\xB8', false);
     oled_write_char(to_1x(keyball.last_pos.row), false);
-    oled_write_char('\xC2', false);
+    oled_write_char('\xB9', false);
     oled_write_char(to_1x(keyball.last_pos.col), false);
 
     // Keycode
-    oled_write_P(PSTR("\xC3\xC4"), false);
+    oled_write_P(PSTR("\xBA\xBB"), false);
     oled_write_char(to_1x(keyball.last_kc >> 4), false);
     oled_write_char(to_1x(keyball.last_kc), false);
 
@@ -460,14 +460,14 @@ void keyball_oled_render_layerinfo(void) {
     //
     //     Layer:-23------------
     //
-    oled_write_P(PSTR("L\xD1\xD2r\xBF"), false);
+    oled_write_P(PSTR("L\xB6\xB7r\xB1"), false);
     for (uint8_t i = 1; i < 8; i++) {
         oled_write_char((layer_state_is(i) ? to_1x(i) : BL), false);
     }
     oled_write_char(' ', false);
 
 #    ifdef POINTING_DEVICE_AUTO_MOUSE_ENABLE
-    oled_write_P(PSTR("\xCF\xD0"), false);
+    oled_write_P(PSTR("\xC2\xC3"), false);
     if (get_auto_mouse_enable()) {
         oled_write_P(LFSTR_ON, false);
     } else {
@@ -477,7 +477,7 @@ void keyball_oled_render_layerinfo(void) {
     oled_write(format_4d(get_auto_mouse_timeout() / 10) + 1, false);
     oled_write_char('0', false);
 #    else
-    oled_write_P(PSTR("\xCF\xD0\xCD\xCE ---"), false);
+    oled_write_P(PSTR("\xC2\xC3\xB4\xB5 ---"), false);
 #    endif
 #endif
 }
