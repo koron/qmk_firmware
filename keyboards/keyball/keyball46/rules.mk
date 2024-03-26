@@ -16,7 +16,6 @@ NKRO_ENABLE = no            # Enable N-Key Rollover
 BACKLIGHT_ENABLE = no       # Enable keyboard backlight functionality
 AUDIO_ENABLE = no           # Audio output
 
-
 # Keyball46 is split keyboard.
 SPLIT_KEYBOARD = yes
 

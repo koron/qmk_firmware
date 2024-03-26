@@ -20,7 +20,7 @@ AUDIO_ENABLE = no           # Audio output
 CUSTOM_MATRIX = lite
 SRC += lib/duplexmatrix/duplexmatrix.c
 
-# Non-split keyboard.
+# One47 is non-split keyboard.
 SPLIT_KEYBOARD = no
 
 # Optical sensor driver for trackball.
