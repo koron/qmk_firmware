@@ -17,6 +17,8 @@ keymaps+=(test)
 keymaps+=(default)
 keymaps+=(via)
 
+hexfiles=()
+
 mkdir -p ${logdir}
 
 for kb in "${keyboards[@]}" ; do
@@ -27,10 +29,11 @@ for kb in "${keyboards[@]}" ; do
     tmpmaps+=(via_Left via_Both)
   fi
   for km in "${tmpmaps[@]}" ; do
+    hexfiles+=("keyball_${kb}_${km}.hex")
     ( make SKIP_GIT=yes KEEP_BIN=true COLOR=false "keyball/${kb}:${km}" 2>&1 | tee "${logdir}/${kb}-${km}.log" | LANG=C.utf-8 ts "[${kb}:${km}]" ) &
   done
 done
 
 wait
 
-$(dirname "$0")/hexsize.sh keyball_*.hex | tee "${logdir}/size.tsv"
+$(dirname "$0")/hexsize.sh "${hexfiles[@]}" | tee "${logdir}/size.tsv"

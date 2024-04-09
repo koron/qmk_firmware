@@ -630,6 +630,10 @@ bool process_record_kb(uint16_t keycode, keyrecord_t *record) {
             case KBC_RST:
                 keyball_set_cpi(0);
                 keyball_set_scroll_div(0);
+#ifdef POINTING_DEVICE_AUTO_MOUSE_ENABLE
+                set_auto_mouse_enable(false);
+                set_auto_mouse_timeout(AUTO_MOUSE_TIME);
+#endif
                 break;
             case KBC_SAVE: {
                 keyball_config_t c = {
@@ -692,3 +696,25 @@ bool process_record_kb(uint16_t keycode, keyrecord_t *record) {
 
     return true;
 }
+
+// Disable functions keycode_config() and mod_config() in keycode_config.c to
+// reduce size.  These functions are provided for customizing magic keycode.
+// These two functions are mostly unnecessary if `MAGIC_KEYCODE_ENABLE = no` is
+// set.
+//
+// If `MAGIC_KEYCODE_ENABLE = no` and you want to keep these two functions as
+// they are, define the macro KEYBALL_KEEP_MAGIC_FUNCTIONS.
+//
+// See: https://docs.qmk.fm/#/squeezing_avr?id=magic-functions
+//
+#if !defined(MAGIC_KEYCODE_ENABLE) && !defined(KEYBALL_KEEP_MAGIC_FUNCTIONS)
+
+uint16_t keycode_config(uint16_t keycode) {
+    return keycode;
+}
+
+uint8_t mod_config(uint8_t mod) {
+    return mod;
+}
+
+#endif
