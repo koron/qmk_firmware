@@ -35,6 +35,9 @@ matrix_row_t matrix_mask[MATRIX_ROWS] = {
 #    ifndef LAS_LAYER_LED_VALUE
 #        define LAS_LAYER_LED_VALUE 64
 #    endif
+#    ifndef LAS_LOCK_LED_VALUE
+#        define LAS_LOCK_LED_VALUE 192
+#    endif
 
 typedef struct {
     bool  layers[3];
@@ -82,13 +85,13 @@ void las_housekeeping(void) {
     }
     // apply locks state
     if (las.locks.caps_lock) {
-        leds[0].r = 0xff;
+        leds[0].r = LAS_LOCK_LED_VALUE;
     }
     if (las.locks.scroll_lock) {
-        leds[1].g = 0xff;
+        leds[1].g = LAS_LOCK_LED_VALUE;
     }
     if (las.locks.num_lock) {
-        leds[2].b = 0xff;
+        leds[2].b = LAS_LOCK_LED_VALUE;
     }
     // update WS2812 array
     ws2812_setleds(leds, 3);
